@@ -1,0 +1,40 @@
+name: Deploy Previews
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  API_URL: ''
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Deploy Backend
+      uses: vercel/actions/cli@v1
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      with:
+        args: deploy --prod --token $VERCEL_TOKEN
+
+    - name: Get API URL
+      id: api-url
+      run: echo "::set-output name=url::$(vercel env get API_URL)"
+
+    - name: Update API URL in code
+      run: |
+        echo "Updating API URL to $API_URL"
+        sed -i 's,https://api.example.com,$API_URL,g' my-app/src/api.js
+
+    - name: Deploy Frontend
+      uses: vercel/actions/cli@v1
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      with:
+        args: deploy --prod --token $VERCEL_TOKEN
